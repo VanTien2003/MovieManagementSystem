@@ -1,6 +1,11 @@
-﻿namespace MovieManagementSystem.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MovieManagementSystem.Entities
 {
-    public class Role
+    [Table("Role")]
+    public class Role : BaseEntity
     {
+        public string Code { get; set; }
+        public string RoleName { get; set; }
     }
 }
