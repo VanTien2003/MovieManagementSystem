@@ -1,6 +1,11 @@
-﻿namespace MovieManagementSystem.Entities
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace MovieManagementSystem.Entities
 {
-    public class UserStatus
+    [Table("UserStatus")]
+    public class UserStatus : BaseEntity
     {
+        public string Code { get; set; }
+        public string Name { get; set; }
     }
 }
