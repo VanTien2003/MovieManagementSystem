@@ -4,7 +4,6 @@ namespace MovieManagementSystem.Payloads.DataRequests
 {
     public class Request_Register
     {
-        public int Point { get; set; }
         public string UserName { get; set; }
         public string Email { get; set; }
         public string Name { get; set; }

@@ -11,6 +11,10 @@ namespace MovieManagementSystem.Services.Interfaces
         DataResponseToken GenerateAccessToken(User user);
         DataResponseToken RenewAccessToken(Request_RenewAccessToken request);
         ResponseObject<DataResponseToken> Login(Request_Login request);
-        IQueryable<DataResponseUser> GetAll();
+        PageResult<DataResponseUser> GetAll(Pagination pagination);
+        ResponseObject<bool> ChangePassword(Request_ChangePassword request, int userId);
+        ResponseObject<bool> ConfirmAccount(string confirmationCode);
+        ResponseObject<bool> SendConfirmationCode(string email);
+        ResponseObject<bool> ResetPassword(string resetCode, string newPassword);
     }
 }
