@@ -1,4 +1,5 @@
-﻿using Azure.Core;
+﻿using AutoMapper;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,18 +19,22 @@ using BcryptNet = BCrypt.Net.BCrypt;
 
 namespace MovieManagementSystem.Services.Implements
 {
-    public class UserService : BaseService , IUserService
+    public class UserService : IUserService
     {
+        private readonly AppDbContext _context;
         private readonly ResponseObject<DataResponseUser> _responseObject;
         private readonly UserConverter _converter;
         private readonly IConfiguration _configuration;
         private readonly ResponseObject<DataResponseToken> _responseTokenObject;
-        public UserService(IConfiguration configuration)
+        public UserService(IConfiguration configuration, ResponseObject<DataResponseUser> responseObject, UserConverter converter, 
+            ResponseObject<DataResponseToken> responseTokenObject, AppDbContext context)
         {
-            _converter = new UserConverter();
-            _responseObject = new ResponseObject<DataResponseUser>();
+            _context = context;
+            _converter = converter;
+            _responseObject = responseObject;
             _configuration = configuration;
-            _responseTokenObject = new ResponseObject<DataResponseToken>();
+            _responseTokenObject = responseTokenObject;
+
         }
 
         public ResponseObject<DataResponseUser> Register(Request_Register request)
@@ -204,9 +209,67 @@ namespace MovieManagementSystem.Services.Implements
             return new ResponseObject<bool>(StatusCodes.Status404NotFound, "Xác minh tài khoản thất bại. Người dùng hoặc mã xác minh không hợp lệ!", false);
         }
 
-        public DataResponseToken RenewAccessToken(Request_RenewAccessToken request)
+        public DataResponseRenewAccessToken RenewAccessToken(Request_RenewAccessToken request)
         {
-            throw new NotImplementedException();
+            var jwtTokenHandler = new JwtSecurityTokenHandler();
+            var secretKeyBytes = System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:SecretKey").Value);
+
+            try
+            {
+                // Tìm kiếm RefreshToken trong cơ sở dữ liệu
+                var refreshTokenEntity = _context.refreshTokens.SingleOrDefault(x => x.Token == request.RefreshToken && x.ExpiredTime > DateTime.Now);
+
+                if (refreshTokenEntity != null)
+                {
+                    // Lấy thông tin người dùng từ RefreshToken
+                    var user = _context.users.SingleOrDefault(x => x.Id == refreshTokenEntity.UserId);
+
+                    // Kiểm tra xem người dùng có tồn tại không
+                    if (user != null)
+                    {
+                        // Tạo AccessToken mới
+                        var role = _context.roles.SingleOrDefault(x => x.Id == user.RoleId);
+                        var tokenDescription = new SecurityTokenDescriptor
+                        {
+                            Subject = new ClaimsIdentity(new[]
+                            {
+                                new Claim("Id", user.Id.ToString()),
+                                new Claim("Email", user.Email),
+                                new Claim("RoleId", role.Id.ToString()),
+                                new Claim(ClaimTypes.Role, role?.Code ?? "")
+                            }),
+                            Expires = DateTime.Now.AddHours(4),
+                            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes), SecurityAlgorithms.HmacSha256Signature),
+                        };
+
+                        var token = jwtTokenHandler.CreateToken(tokenDescription);
+                        var accessToken = jwtTokenHandler.WriteToken(token);
+
+                        // Trả về AccessToken mới
+                        return new DataResponseRenewAccessToken
+                        {
+                            AccessToken = accessToken,
+                            Message = "Mã truy cập được làm mới thành công!"
+                        };
+                    }
+                }
+
+                // Trường hợp RefreshToken không hợp lệ hoặc hết hạn
+                return new DataResponseRenewAccessToken
+                {
+                    AccessToken = null,
+                    Message = "Mã làm mới không hợp lệ hoặc đã hết hạn."
+                };
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi
+                return new DataResponseRenewAccessToken
+                {
+                    AccessToken = null,
+                    Message = $"Đã có lỗi xảy ra: {ex.Message}"
+                };
+            }
         }
 
         private string GenerateRefreshToken()
@@ -289,15 +352,16 @@ namespace MovieManagementSystem.Services.Implements
             return _responseTokenObject.ResponseSuccess("Đăng nhập thành công", GenerateAccessToken(user));
         }
 
-        public PageResult<DataResponseUser> GetAll(Pagination pagination)
+        public List<DataResponseUser> GetAll()
         {
             try
             {
-                var danhSachNguoiDung = _context.users.Where(u => u.IsActive).AsNoTracking().AsQueryable();
-
-                var result = PageResult<DataResponseUser>.ToPageResult(pagination, danhSachNguoiDung.Select(x => _converter.EntityToDTO(x)).AsQueryable());
-                pagination.TotalCount = danhSachNguoiDung.Count();
-                return new PageResult<DataResponseUser>(pagination, result);
+                var danhSachNguoiDung = _context.users.Where(u => u.IsActive).ToList();
+                var result = danhSachNguoiDung.Select(x => _converter.EntityToDTO(x)).ToList();
+                return result;
+                //var result = PageResult<DataResponseUser>.ToPageResult(pagination, danhSachNguoiDung.Select(x => _converter.EntityToDTO(x)).AsQueryable());
+                //pagination.TotalCount = danhSachNguoiDung.Count();
+                //return new PageResult<DataResponseUser>(pagination, result);
             }
             catch (Exception ex)
             {

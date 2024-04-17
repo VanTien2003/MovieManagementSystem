@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -34,9 +35,9 @@ namespace MovieManagementSystem.Controllers
 
         [HttpGet("/api/auth/get-all")]
         [Authorize(Roles = "Admin")]
-        public ActionResult GetAll([FromQuery] Pagination pagination)
+        public ActionResult GetAll()
         {
-            return Ok(_userService.GetAll(pagination));
+            return Ok(_userService.GetAll());
         }
 
         [HttpPost("/api/auth/confirm-account")]
@@ -53,15 +54,15 @@ namespace MovieManagementSystem.Controllers
             return Ok(_userService.SendConfirmationCode(email));
         }
 
-        [HttpPost("/api/auth/forgot-password")]
+        [HttpPut("/api/auth/forgot-password")]
         [Authorize]
         public IActionResult ResetPassword(string resetCode, string newPassword)
         {
             return Ok(_userService.ResetPassword(resetCode, newPassword));
         }
 
-        [HttpPost("/api/auth/change-password")]
-        [Authorize]
+        [HttpPut("/api/auth/change-password")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public IActionResult ChangePassword([FromBody] Request_ChangePassword request)
         {
             // Lấy ID của người dùng đang đăng nhập từ các thông tin xác thực
