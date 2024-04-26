@@ -17,8 +17,8 @@ namespace MovieManagementSystem.Payloads.Converters
             return new DataResponseBillTicket()
             {
                 Quantity = billTicket.Quantity,
-                BillName = billTicket.Bill.Name,
-                TicketCode = billTicket.Ticket.Code
+                TicketCode = _context.tickets.SingleOrDefault(x => x.Id == billTicket.TicketId).Code,
+                BillName = _context.bills.SingleOrDefault(x => x.Id == billTicket.BillId).Name
             };
         }
     }

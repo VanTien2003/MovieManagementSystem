@@ -9,6 +9,5 @@ namespace MovieManagementSystem.Payloads.DataResponses
         public int SeatNumber { get; set; }
         public double PriceTicket { get; set; }
         public bool IsActive { get; set; }
-        public IQueryable<DataResponseBillTicket>? DataResponseBillTickets { get; set; }
     }
 }

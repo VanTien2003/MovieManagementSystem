@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MovieManagementSystem.Payloads.DataRequests;
 using MovieManagementSystem.Services.Interfaces;
@@ -8,23 +7,22 @@ namespace MovieManagementSystem.Controllers
 {
     [Route("Api/[controller]/[action]")]
     [ApiController]
-    //[Authorize(Roles = "Admin")]
     public class SeatController : ControllerBase
     {
         private readonly ISeatService _seatService;
-        public SeatController(ISeatService seatService)
+        public SeatController(ISeatService movieService)
         {
-            _seatService = seatService;
+            _seatService = movieService;
         }
 
         [HttpPost]
-        public IActionResult AddSeat(Request_AddSeat request)
+        public IActionResult AddSeat(Request_Seat request)
         {
             return Ok(_seatService.AddSeat(request));
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateSeat(Request_EditSeat request, int id)
+        public IActionResult UpdateSeat(Request_Seat request, int id)
         {
             return Ok(_seatService.EditSeat(request, id));
         }

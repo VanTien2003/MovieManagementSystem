@@ -7,14 +7,7 @@ namespace MovieManagementSystem.Payloads.Converters
 {
     public class FoodConverter
     {
-        private readonly AppDbContext _context;
-        private readonly BillFoodConverter _converter;
-
-        public FoodConverter(AppDbContext context, BillFoodConverter converter)
-        {
-            _context = context;
-            _converter = converter;
-        }
+        public FoodConverter(){}
 
         public DataResponseFood EntityToDTO(Food food)
         {
@@ -24,10 +17,7 @@ namespace MovieManagementSystem.Payloads.Converters
                 Description = food.Description,
                 Image = food.Image,
                 NameOfFood = food.NameOfFood,
-                IsActive = food.IsActive,
-                DataResponseBillFoods = _context.billFoods
-                                            .Where(x => x.FoodId == food.Id)
-                                            .Select(x => _converter.EntityToDTO(x))
+                IsActive = food.IsActive
             };
         }
     }

@@ -6,8 +6,8 @@ namespace MovieManagementSystem.Services.Interfaces
 {
     public interface ISeatService
     {
-        ResponseObject<DataResponseSeat> AddSeat(Request_AddSeat request);
-        ResponseObject<DataResponseSeat> EditSeat(Request_EditSeat request, int id);
+        ResponseObject<DataResponseSeat> AddSeat(Request_Seat request);
+        ResponseObject<DataResponseSeat> EditSeat(Request_Seat request, int id);
         ResponseObject<DataResponseSeat> DeleteSeat(int id);
     }
 }

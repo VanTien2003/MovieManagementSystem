@@ -7,7 +7,6 @@ namespace MovieManagementSystem.Payloads.Converters
     public class BillFoodConverter
     {
         private readonly AppDbContext _context;
-
         public BillFoodConverter(AppDbContext context)
         {
             _context = context;

@@ -1,6 +1,6 @@
 ﻿namespace MovieManagementSystem.Payloads.DataRequests
 {
-    public class Request_EditBillTicket
+    public class Request_BillTicket
     {
         public int Quantity { get; set; }
         public int BillId { get; set; }

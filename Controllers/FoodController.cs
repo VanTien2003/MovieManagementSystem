@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MovieManagementSystem.Payloads.DataRequests;
 using MovieManagementSystem.Services.Interfaces;
@@ -8,7 +7,6 @@ namespace MovieManagementSystem.Controllers
 {
     [Route("Api/[controller]/[action]")]
     [ApiController]
-    //[Authorize(Roles = "Admin")]
     public class FoodController : ControllerBase
     {
         private readonly IFoodService _foodService;
@@ -18,13 +16,13 @@ namespace MovieManagementSystem.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddFood(Request_AddFood request)
+        public IActionResult AddFood(Request_Food request)
         {
             return Ok(_foodService.AddFood(request));
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateFood(Request_EditFood request, int id)
+        public IActionResult UpdateFood(Request_Food request, int id)
         {
             return Ok(_foodService.EditFood(request, id));
         }

@@ -22,7 +22,7 @@ namespace MovieManagementSystem.Services.Implements
             _converter = converter;
         }
 
-        public ResponseObject<DataResponseSeat> AddSeat(Request_AddSeat request)
+        public ResponseObject<DataResponseSeat> AddSeat(Request_Seat request)
         {
             var seatStatus = _context.seatStatus.SingleOrDefault(x => x.Id == request.SeatStatusId);
             var seatType = _context.seatTypes.SingleOrDefault(x => x.Id == request.SeatTypeId);
@@ -51,50 +51,14 @@ namespace MovieManagementSystem.Services.Implements
             seat.RoomId = request.RoomId;
             seat.SeatTypeId = request.SeatTypeId;
             seat.IsActive = true;
+
             _context.seats.Add(seat);
             _context.SaveChanges();
-
-            if (request.AddTickets != null)
-            {
-                seat.Tickets = AddTicketListWithSeat(seat.Id, request.AddTickets);
-                _context.seats.Update(seat);
-                _context.SaveChanges();
-            }
             
             return _responseObject.ResponseSuccess("Add seat successfully!", _converter.EntityToDTO(seat));
         }
 
-        public List<Ticket> AddTicketListWithSeat(int seatId, List<Request_Ticket> requests)
-        {
-            var seat = _context.seats.FirstOrDefault(x => x.Id == seatId);
-            if (seat == null)
-            {
-                return null;
-            }
-
-            List<Ticket> list = new List<Ticket>();
-            foreach (var request in requests)
-            {
-                var schedule = _context.schedules.FirstOrDefault(x => x.Id == request.ScheduleId);
-                if (seat == null)
-                {
-                    return null;
-                }
-
-                Ticket ticket = new Ticket();
-                ticket.Code = request.Code;
-                ticket.ScheduleId = request.ScheduleId;
-                ticket.SeatId = seatId;
-                ticket.PriceTicket = request.PriceTicket;
-                ticket.IsActive = true;
-                list.Add(ticket);
-            }
-            _context.tickets.AddRange(list);
-            _context.SaveChanges();
-            return list;
-        }
-
-        public ResponseObject<DataResponseSeat> EditSeat(Request_EditSeat request, int id)
+        public ResponseObject<DataResponseSeat> EditSeat(Request_Seat request, int id)
         {
             var seat = _context.seats.SingleOrDefault(x => x.Id == id);
             var seatStatus = _context.seatStatus.SingleOrDefault(x => x.Id == request.SeatStatusId);
@@ -127,60 +91,24 @@ namespace MovieManagementSystem.Services.Implements
             seat.RoomId = request.RoomId;
             seat.SeatTypeId = request.SeatTypeId;
 
-            if (request.EditTickets != null)
-            {
-                seat.Tickets = EditTicketListWithSeat(seat.Id, request.EditTickets);
-            }
             _context.seats.Update(seat);
             _context.SaveChanges();
             return _responseObject.ResponseSuccess("Edit seat successfully!", _converter.EntityToDTO(seat));
         }
 
-        private List<Ticket> EditTicketListWithSeat(int seatId, List<Request_Ticket> requests)
-        {
-            var seat = _context.seats.FirstOrDefault(x => x.Id == seatId);
-            if (seat == null)
-            {
-                return null;
-            }
-
-            List<Ticket> list = new List<Ticket>();
-            foreach (var request in requests)
-            {
-                var schedule = _context.schedules.FirstOrDefault(x => x.Id == request.ScheduleId);
-                if (schedule == null)
-                {
-                    return null;
-                }
-
-                Ticket ticket = new Ticket();
-                ticket.Code = request.Code;
-                ticket.ScheduleId = request.ScheduleId;
-                ticket.SeatId = seatId;
-                ticket.PriceTicket = request.PriceTicket;
-                ticket.IsActive = true;
-                list.Add(ticket);
-            }
-            return list;
-        }
-
         public ResponseObject<DataResponseSeat> DeleteSeat(int id)
         {
             var existingSeat = _context.seats
-                                    .Where(seat => seat.Id == id)
                                     .Include(seat => seat.Tickets)
-                                    .SingleOrDefault();
+                                    .SingleOrDefault(seat => seat.Id == id);
             if (existingSeat == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The seat is not found. Please check again!", null);
             }
 
-            if(existingSeat.Tickets != null)
-            {
-                _context.tickets.RemoveRange(existingSeat.Tickets);
-            }
+            existingSeat.IsActive = false;
         
-            _context.seats.Remove(existingSeat);
+            _context.seats.Update(existingSeat);
             _context.SaveChanges();
             return _responseObject.ResponseSuccess("The seat has been deleted successfully!", null);
         }

@@ -46,27 +46,31 @@ namespace MovieManagementSystem.Services.Implements
                 || string.IsNullOrWhiteSpace(request.Email)
                 )
             {
-                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng điền đầy đủ thông tin", null);
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng điền đầy đủ thông tin.", null);
             }
             if(_context.users.Any(x => x.Email.Equals(request.Email)))
             {
-                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Email đã tồn tại trên hệ thống", null);
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Email đã tồn tại trên hệ thống.", null);
             }
             if (_context.users.Any(x => x.UserName.Equals(request.UserName)))
             {
-                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Tên tài khoản đã tồn tại trên hệ thống", null);
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Tên tài khoản đã tồn tại trên hệ thống.", null);
             }
             if(!Validate.IsValidEmail(request.Email))
             {
-                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Định dạng Email không hợp lệ", null);
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Định dạng Email không hợp lệ.", null);
             }
             if(!_context.rankCustomers.Any(x => x.Id == request.RankCustomerId))
             {
-                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Hạng khách hàng không tồn tại", null);
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Hạng khách hàng không tồn tại.", null);
             }
             if (!_context.userStatus.Any(x => x.Id == request.UserStatusId))
             {
-                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Trạng thái người dùng không tồn tại", null);
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Trạng thái người dùng không tồn tại.", null);
+            }
+            if(request.UserName.Contains(' '))
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Tên người dùng không được chứa ký tự khoảng trắng.", null);
             }
 
             // Tạo mã xác nhận
@@ -132,33 +136,12 @@ namespace MovieManagementSystem.Services.Implements
         {
             try
             {
-                // Tạo và gửi email
-                var fromAddress = new MailAddress("tien.pv.2054@aptechlearning.edu.vn", "Văn Tiến");
-                var toAddress = new MailAddress(emailAddress);
-                const string fromPassword = "koje cejh ydsk sewj";
                 const string subject = "Xác nhận tài khoản Email";
                 string body = $"Mã xác nhận của bạn là: {confirmationCode}";
+                EmailService emailService = new EmailService();
+                var isValidSendMail = emailService.SendEmail(emailAddress, subject, body);
 
-                var smtp = new SmtpClient
-                {
-                    Host = "smtp.gmail.com", // Thay đổi thành SMTP server của bạn
-                    Port = 587,
-                    EnableSsl = true,
-                    DeliveryMethod = SmtpDeliveryMethod.Network,
-                    UseDefaultCredentials = false,
-                    Credentials = new System.Net.NetworkCredential(fromAddress.Address, fromPassword)
-                };
-
-                using (var message = new MailMessage(fromAddress, toAddress)
-                {
-                    Subject = subject,
-                    Body = body
-                })
-                {
-                    smtp.Send(message);
-                }
-
-                return true; // Gửi email thành công
+                return isValidSendMail; // Gửi email thành công
             }
             catch (Exception ex)
             {
@@ -212,7 +195,7 @@ namespace MovieManagementSystem.Services.Implements
         public DataResponseRenewAccessToken RenewAccessToken(Request_RenewAccessToken request)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
-            var secretKeyBytes = System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:SecretKey").Value);
+            var secretKeyBytes = System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:SecretKey").Value!);
 
             try
             {
@@ -257,7 +240,7 @@ namespace MovieManagementSystem.Services.Implements
                 // Trường hợp RefreshToken không hợp lệ hoặc hết hạn
                 return new DataResponseRenewAccessToken
                 {
-                    AccessToken = null,
+                    AccessToken = "",
                     Message = "Mã làm mới không hợp lệ hoặc đã hết hạn."
                 };
             }
@@ -266,7 +249,7 @@ namespace MovieManagementSystem.Services.Implements
                 // Xử lý lỗi
                 return new DataResponseRenewAccessToken
                 {
-                    AccessToken = null,
+                    AccessToken = "",
                     Message = $"Đã có lỗi xảy ra: {ex.Message}"
                 };
             }
@@ -285,7 +268,7 @@ namespace MovieManagementSystem.Services.Implements
         public DataResponseToken GenerateAccessToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
-            var secretKeyBytes = System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:SecretKey").Value);
+            var secretKeyBytes = System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:SecretKey").Value!);
 
             var role = _context.roles.SingleOrDefault(x => x.Id == user.RoleId);
 
@@ -495,6 +478,110 @@ namespace MovieManagementSystem.Services.Implements
 
             _context.confirmEmails.RemoveRange(expiredCodes);
             _context.SaveChanges();
+        }
+
+        public ResponseObject<DataResponseUser> GetUserById(int id)
+        {
+            var user = _context.users.SingleOrDefault(u => u.Id == id);
+            if(user == null)
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Người dùng không tồn tại", null);
+            }
+
+            return _responseObject.ResponseSuccess("Lấy thông tin người dùng thành công. ", _converter.EntityToDTO(user));
+        }
+
+        public ResponseObject<DataResponseUser> EditUserByAdmin(Request_EditUserByAdmin request, int id)
+        {
+            var user = _context.users.SingleOrDefault(u => u.Id == id);
+            if(user == null)
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Người dùng không tồn tại.", null);
+            }
+            if (string.IsNullOrWhiteSpace(request.PhoneNumber)
+                || string.IsNullOrWhiteSpace(request.UserName)
+                || string.IsNullOrWhiteSpace(request.Password)
+                || string.IsNullOrWhiteSpace(request.Name)
+                )
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng điền đầy đủ thông tin.", null);
+            }
+            if (_context.users.Any(x => x.UserName.Equals(request.UserName)))
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Tên tài khoản đã tồn tại trên hệ thống.", null);
+            }
+            if (!_context.rankCustomers.Any(x => x.Id == request.RankCustomerId))
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Hạng khách hàng không tồn tại.", null);
+            }
+            if (!_context.roles.Any(x => x.Id == request.RoleId))
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Vai trò không tồn tại.", null);
+            }
+            if (request.UserName.Contains(' '))
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Tên người dùng không được chứa ký tự khoảng trắng.", null);
+            }
+
+            user.UserName = request.UserName;
+            user.Password = BcryptNet.HashPassword(request.Password);
+            user.Name = request.Name;
+            user.PhoneNumber = request.PhoneNumber;
+            user.RankCustomerId = request.RankCustomerId;
+            user.RoleId = request.RoleId;
+
+            _context.users.Update(user);
+            _context.SaveChanges();
+            return _responseObject.ResponseSuccess("Cập nhật thông tin người dùng thành công!", _converter.EntityToDTO(user));
+        }
+
+        public ResponseObject<DataResponseUser> EditUser(Request_EditUser request, int id)
+        {
+            var user = _context.users.SingleOrDefault(u => u.Id == id);
+            if (user == null)
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Người dùng không tồn tại.", null);
+            }
+            if (string.IsNullOrWhiteSpace(request.PhoneNumber)
+                || string.IsNullOrWhiteSpace(request.UserName)
+                || string.IsNullOrWhiteSpace(request.Password)
+                || string.IsNullOrWhiteSpace(request.Name)
+                )
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Vui lòng điền đầy đủ thông tin.", null);
+            }
+            if (_context.users.Any(x => x.UserName.Equals(request.UserName)))
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Tên tài khoản đã tồn tại trên hệ thống.", null);
+            }
+            if (request.UserName.Contains(' '))
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Tên người dùng không được chứa ký tự khoảng trắng.", null);
+            }
+
+            user.UserName = request.UserName;
+            user.Password = BcryptNet.HashPassword(request.Password);
+            user.Name = request.Name;
+            user.PhoneNumber = request.PhoneNumber;
+
+            _context.users.Update(user);
+            _context.SaveChanges();
+            return _responseObject.ResponseSuccess("Cập nhật thông tin người dùng thành công!", _converter.EntityToDTO(user));
+        }
+
+        public ResponseObject<DataResponseUser> DeleteUser(int id)
+        {
+            var user = _context.users.SingleOrDefault(u => u.Id == id);
+            if (user == null)
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Người dùng không tồn tại.", null);
+            }
+
+            user.IsActive = false;
+
+            _context.users.Update(user);
+            _context.SaveChanges();
+            return _responseObject.ResponseSuccess("Xóa người dùng thành công!", null);
         }
     }
 }

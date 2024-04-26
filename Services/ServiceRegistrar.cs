@@ -1,4 +1,5 @@
-﻿using MovieManagementSystem.Payloads.Converters;
+﻿using Microsoft.AspNetCore.Hosting;
+using MovieManagementSystem.Payloads.Converters;
 using MovieManagementSystem.Payloads.DataResponses;
 using MovieManagementSystem.Payloads.Responses;
 using MovieManagementSystem.Services.Implements;
@@ -18,6 +19,18 @@ namespace MovieManagementSystem.Services
             services.AddScoped<IRoomService, RoomService>();
             services.AddScoped<ICinemaService, CinemaService>();
             services.AddScoped<IScheduleService, ScheduleService>();
+            services.AddScoped<IVnPayService, VnPayService>();
+            services.AddScoped<IBillService, BillService>();
+            services.AddScoped<IBannerService, BannerService>();
+            services.AddScoped<IGeneralSettingService, GeneralSettingService>();
+            services.AddScoped<IMovieTypeService, MovieTypeService>();
+            services.AddScoped<IBillFoodService, BillFoodService>();
+            services.AddScoped<ITicketService, TicketService>();
+            services.AddScoped<IBillTicketService, BillTicketService>();
+            services.AddScoped<IRankCustomerService, RankCustomerService>();
+            services.AddScoped<IPromotionService, PromotionService>();
+
+
 
             // Add singleton response objects
             services.AddSingleton<ResponseObject<DataResponseUser>>();
@@ -32,6 +45,16 @@ namespace MovieManagementSystem.Services
             services.AddSingleton<ResponseObject<DataResponseBillTicket>>();
             services.AddSingleton<ResponseObject<DataResponseSeat>>();
             services.AddSingleton<ResponseObject<DataResponseRenewAccessToken>>();
+            services.AddSingleton<ResponseObject<DataResponseAllBill>>();
+            services.AddSingleton<ResponseObject<DataResponseBill>>();
+            services.AddSingleton<ResponseObject<DataResponseVnPayment>>();
+            services.AddSingleton<ResponseObject<DataResponseBanner>>();
+            services.AddSingleton<ResponseObject<DataResponseGeneralSetting>>();
+            services.AddSingleton<ResponseObject<DataResponseMovieType>>();
+            services.AddSingleton<ResponseObject<DataResponseRankCustomer>>();
+            services.AddSingleton<ResponseObject<DataResponsePromotion>>();
+
+
 
             // Add scoped converters
             services.AddScoped<UserConverter>();
@@ -40,7 +63,6 @@ namespace MovieManagementSystem.Services
             services.AddScoped<TicketConverter>();
             services.AddScoped<BillTicketConverter>();
             services.AddScoped<FoodConverter>();
-            services.AddScoped<BillFoodConverter>();
             services.AddScoped<RoomConverter>();
             services.AddScoped<SeatConverter>();
             services.AddScoped<CinemaConverter>();
@@ -48,8 +70,15 @@ namespace MovieManagementSystem.Services
             services.AddScoped<ScheduleOfMovieConverter>();
             services.AddScoped<ScheduleOfRoomConverter>();
             services.AddScoped<SeatOfRoomConverter>();
-            services.AddScoped<TicketOfSeatConverter>();
             services.AddScoped<TicketOfScheduleConverter>();
+            services.AddScoped<BillConverter>();
+            services.AddScoped<BannerConverter>();
+            services.AddScoped<GeneralSettingConverter>();
+            services.AddScoped<MovieTypeConverter>();
+            services.AddScoped<RankCustomerConverter>();
+            services.AddScoped<PromotionConverter>();
+            services.AddScoped<BillFoodConverter>();
+
         }
     }
 }

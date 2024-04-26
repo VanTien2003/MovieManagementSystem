@@ -97,60 +97,6 @@ namespace MovieManagementSystem.Services.Implements
             return list;
         }
 
-        //public void AddTicketList(int scheduleId, List<Request_AddTicket> requests)
-        //{
-        //    var schedule = _context.schedules.FirstOrDefault(x => x.Id == scheduleId);
-        //    if(schedule == null)
-        //    {
-        //        return;
-        //    }
-
-        //    foreach (var request in requests)
-        //    {
-        //        var seat = _context.seats.FirstOrDefault(x => x.Id == request.SeatId);
-        //        if(seat == null)
-        //        {
-        //            return;
-        //        }
-                
-        //        Ticket ticket = new Ticket();
-        //        ticket.Code = request.Code;
-        //        ticket.ScheduleId = scheduleId;
-        //        ticket.SeatId = request.SeatId;
-        //        ticket.PriceTicket = request.PriceTicket;
-        //        ticket.IsActive = true;
-        //        if(request.AddBillTickets != null)
-        //        {
-        //            AddBillTicketList(ticket.Id, request.AddBillTickets);
-        //            _context.SaveChanges();
-        //        }
-        //        _context.tickets.Add(ticket);
-        //    }
-        //}
-
-        //public void AddBillTicketList(int ticketId, List<Request_AddBillTicket> requests)
-        //{
-        //    var ticket = _context.tickets.FirstOrDefault(x => x.Id == ticketId);
-        //    if(ticket == null)
-        //    {
-        //        return;
-        //    }
-
-        //    foreach (var request in requests)
-        //    {
-        //        var bill = _context.bills.FirstOrDefault(x => x.Id == request.BillId);
-        //        if(bill == null)
-        //        {
-        //            return;
-        //        }
-
-        //        BillTicket billTicket = new BillTicket();
-        //        billTicket.Quantity = request.Quantity;
-        //        billTicket.TicketId = ticketId;
-        //        billTicket.BillId = request.BillId;
-        //        _context.billTickets.Add(billTicket);
-        //    }
-        //}
         public ResponseObject<DataResponseMovie> EditMovie(Request_EditMovie request, int id)
         {
             var movie = _context.movies.FirstOrDefault(x => x.Id == id);
@@ -220,66 +166,11 @@ namespace MovieManagementSystem.Services.Implements
                 schedule.IsActive = true;
                 list.Add(schedule);
             }
+
+            _context.schedules.UpdateRange(list);
+            _context.SaveChanges();
             return list;
         }
-
-        //private List<Ticket> EditTicketList(int scheduleId, List<Request_EditTicket> requests)
-        //{
-        //    var schedule = _context.schedules.FirstOrDefault(x => x.Id == scheduleId);
-        //    if (schedule == null)
-        //    {
-        //        return null;
-        //    }
-
-        //    List<Ticket> list = new List<Ticket>();
-        //    foreach (var request in requests)
-        //    {
-        //        var seat = _context.seats.FirstOrDefault(x => x.Id == request.SeatId);
-        //        if (seat == null)
-        //        {
-        //            return null;
-        //        }
-
-        //        Ticket ticket = new Ticket();
-        //        ticket.Code = request.Code;
-        //        ticket.ScheduleId = scheduleId;
-        //        ticket.SeatId = request.SeatId;
-        //        ticket.PriceTicket = request.PriceTicket;
-        //        ticket.IsActive = true;
-        //        if (request.EditBillTickets != null)
-        //        {
-        //            ticket.BillTickets = EditBillTicketList(ticket.Id, request.EditBillTickets);
-        //        }
-        //        list.Add(ticket);
-        //    }
-        //    return list;
-        //}
-
-        //private List<BillTicket> EditBillTicketList(int ticketId, List<Request_EditBillTicket> requests)
-        //{
-        //    var ticket = _context.tickets.FirstOrDefault(x => x.Id == ticketId);
-        //    if (ticket == null)
-        //    {
-        //        return null;
-        //    }
-
-        //    List<BillTicket> list = new List<BillTicket>(); 
-        //    foreach (var request in requests)
-        //    {
-        //        var bill = _context.bills.FirstOrDefault(x => x.Id == request.BillId);
-        //        if (bill == null)
-        //        {
-        //            return null;
-        //        }
-
-        //        BillTicket billTicket = new BillTicket();
-        //        billTicket.Quantity = request.Quantity;
-        //        billTicket.TicketId = ticketId;
-        //        billTicket.BillId = request.BillId;
-        //        list.Add(billTicket);
-        //    }
-        //    return list;
-        //}
 
         public ResponseObject<DataResponseMovie> DeleteMovie(int id)
         {
@@ -292,12 +183,9 @@ namespace MovieManagementSystem.Services.Implements
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The movie is not found. Please check again!", null);
             }
 
-            if(existingMovie.Schedules != null)
-            {
-                _context.schedules.RemoveRange(existingMovie.Schedules);
-            }
+            existingMovie.IsActive = false;
 
-            _context.movies.Remove(existingMovie);
+            _context.movies.Update(existingMovie);
             _context.SaveChanges();
             return _responseObject.ResponseSuccess("The movie has been deleted successfully!", null);
         }

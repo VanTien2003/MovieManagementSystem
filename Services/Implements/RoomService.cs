@@ -189,6 +189,8 @@ namespace MovieManagementSystem.Services.Implements
                 seat.IsActive = true;
                 list.Add(seat);
             }
+            _context.seats.UpdateRange(list);
+            _context.SaveChanges();
             return list;
         }
 
@@ -220,33 +222,26 @@ namespace MovieManagementSystem.Services.Implements
                 schedule.IsActive = true;
                 list.Add(schedule);
             }
+            _context.schedules.UpdateRange(list);
+            _context.SaveChanges();
             return list;
         }
 
         public ResponseObject<DataResponseRoom> DeleteRoom(int id)
         {
             var existingRoom = _context.rooms
-                                    .Where(room => room.Id == id)
                                     .Include(room => room.Schedules)
                                     .Include(room => room.Seats)
-                                    .SingleOrDefault();
+                                    .SingleOrDefault(room => room.Id == id);
 
             if (existingRoom == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The room is not found. Please check again!", null);
             }
 
-            if(existingRoom.Schedules != null)
-            {
-                _context.schedules.RemoveRange(existingRoom.Schedules);
-            }
-
-            if(existingRoom.Seats != null)
-            {
-                _context.seats.RemoveRange(existingRoom.Seats);
-            }     
+            existingRoom.IsActive = false;
             
-            _context.rooms.Remove(existingRoom);
+            _context.rooms.Update(existingRoom);
             _context.SaveChanges();
             return _responseObject.ResponseSuccess("The room has been deleted successfully!", null);
         }

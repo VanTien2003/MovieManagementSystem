@@ -10,7 +10,5 @@ namespace MovieManagementSystem.Payloads.DataResponses
         public string RoomName { get; set; } = "";
         public bool IsActive { get; set; }
         public string SeatTypeName { get; set; } = "";
-
-        public IQueryable<DataResponseTicketOfSeat>? DataReponseTickets { get; set; }
     }
 }

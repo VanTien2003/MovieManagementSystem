@@ -23,7 +23,7 @@ namespace MovieManagementSystem.Services.Implements
             _converter = converter;
         }
 
-        public ResponseObject<DataResponseFood> AddFood(Request_AddFood request)
+        public ResponseObject<DataResponseFood> AddFood(Request_Food request)
         {
             if (request == null)
             {
@@ -38,43 +38,12 @@ namespace MovieManagementSystem.Services.Implements
             food.NameOfFood = request.NameOfFood;
             _context.foods.Add(food);
             _context.SaveChanges();
-
-            if (request.AddBillFoods != null)
-            {
-                food.BillFoods = AddBillFoodList(food.Id, request.AddBillFoods);
-                _context.foods.Update(food);
-                _context.SaveChanges();
-            }
             
             return _responseObject.ResponseSuccess("Add food successfully!", _converter.EntityToDTO(food));
         }
 
-        public List<BillFood> AddBillFoodList(int foodId, List<Request_AddBillFood> requests)
-        {
-            var food = _context.foods.FirstOrDefault(f => f.Id == foodId);
-            if(food == null)
-            {
-                return null;
-            }
-
-            List<BillFood> list = new List<BillFood>();
-            foreach (var request in requests)
-            {
-                var bill = _context.bills.SingleOrDefault(x => x.Id == request.BillId);
-                if(bill == null)
-                {
-                    return null;
-                }
-
-                BillFood billFood = new BillFood();
-                billFood.Quantity = request.Quantity;
-                billFood.BillId = request.BillId;
-                billFood.FoodId = foodId;
-                list.Add(billFood);
-            }
-            return list;
-        }
-        public ResponseObject<DataResponseFood> EditFood(Request_EditFood request, int id)
+        
+        public ResponseObject<DataResponseFood> EditFood(Request_Food request, int id)
         {
             var food = _context.foods.FirstOrDefault(f => f.Id == id);
             if (request == null)
@@ -91,35 +60,11 @@ namespace MovieManagementSystem.Services.Implements
             food.Image = request.Image;
             food.NameOfFood = request.NameOfFood;
 
-            if (request.EditBillFoods != null)
-            {
-                food.BillFoods = EditBillFoodList(food.Id, request.EditBillFoods);
-            }
             _context.foods.Update(food);
             _context.SaveChanges();
             return _responseObject.ResponseSuccess("Edit food successfully!", _converter.EntityToDTO(food));
         }
-
-        public List<BillFood> EditBillFoodList(int foodId, List<Request_EditBillFood> requests)
-        {
-            var food = _context.foods.FirstOrDefault(f => f.Id == foodId);
-            if (food == null)
-            {
-                return null;
-            }
-
-            List<BillFood> list = new List<BillFood>();
-            foreach (var request in requests)
-            {
-                BillFood billFood = new BillFood();
-                billFood.Quantity = request.Quantity;
-                billFood.BillId = request.BillId;
-                billFood.FoodId = foodId;
-                list.Add(billFood);
-            }
-            return list;
-        }
-
+     
         public ResponseObject<DataResponseFood> DeleteFood(int id)
         {
             var existingFood = _context.foods
@@ -131,12 +76,9 @@ namespace MovieManagementSystem.Services.Implements
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The food is not found. Please check again!", null);
             }
 
-            if(existingFood.BillFoods != null)
-            {
-                _context.billFoods.RemoveRange(existingFood.BillFoods); 
-            }
+            existingFood.IsActive = false;
 
-            _context.foods.Remove(existingFood);
+            _context.foods.Update(existingFood);
             _context.SaveChanges();
             return _responseObject.ResponseSuccess("The food has been deleted successfully!", null);
         }

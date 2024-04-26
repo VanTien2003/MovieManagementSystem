@@ -25,12 +25,12 @@ namespace MovieManagementSystem.Services.Implements
 
         public ResponseObject<DataResponseSchedule> AddSchedule(Request_AddSchedule request)
         {
-            var movie = _context.movies.SingleOrDefault(s => s.Id == request.MovieId);
-            var room = _context.rooms.SingleOrDefault(x => x.Id == request.RoomId);
             if (request == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Request cannot be blank", null);
             }
+            var movie = _context.movies.SingleOrDefault(s => s.Id == request.MovieId);
+            var room = _context.rooms.SingleOrDefault(x => x.Id == request.RoomId);
             if (movie == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The movie status doesn't exist", null);
@@ -38,6 +38,14 @@ namespace MovieManagementSystem.Services.Implements
             if (room == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The room doesn't exist", null);
+            }
+
+            var existingSchedule = _context.schedules.FirstOrDefault(s => s.RoomId == request.RoomId 
+                                                    && (request.StartAt < s.EndAt && request.EndAt > s.StartAt));
+
+            if (existingSchedule != null)
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "There is a schedule conflict in the room", null);
             }
 
             Schedule schedule = new Schedule()
@@ -96,13 +104,13 @@ namespace MovieManagementSystem.Services.Implements
 
         public ResponseObject<DataResponseSchedule> EditSchedule(Request_EditSchedule request, int id)
         {
-            var schedule = _context.schedules.SingleOrDefault(x => x.Id == id);
-            var movie = _context.movies.SingleOrDefault(s => s.Id == request.MovieId);
-            var room = _context.rooms.SingleOrDefault(x => x.Id == request.RoomId);
             if (request == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "Request cannot be blank", null);
             }
+            var schedule = _context.schedules.SingleOrDefault(x => x.Id == id);
+            var movie = _context.movies.SingleOrDefault(s => s.Id == request.MovieId);
+            var room = _context.rooms.SingleOrDefault(x => x.Id == request.RoomId);
             if (movie == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The movie status doesn't exist", null);
@@ -114,6 +122,16 @@ namespace MovieManagementSystem.Services.Implements
             if (schedule == null)
             {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The schedule doesn't exist", null);
+            }
+
+            var existingSchedule = _context.schedules.FirstOrDefault(s =>
+                                            s.RoomId == request.RoomId &&
+                                            s.Id != id &&
+                                            (request.StartAt < s.EndAt && request.EndAt > s.StartAt));
+
+            if (existingSchedule != null)
+            {
+                return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "There is a schedule conflict in the room", null);
             }
 
             schedule.Price = request.Price;
@@ -158,26 +176,23 @@ namespace MovieManagementSystem.Services.Implements
                 ticket.IsActive = true;
                 list.Add(ticket);
             }
-
+            _context.tickets.UpdateRange(list);
+            _context.SaveChanges();
             return list;
         }
         public ResponseObject<DataResponseSchedule> DeleteSchedule(int id)
         {
             var existingSchedule = _context.schedules
-                                        .Where(schedule => schedule.Id == id)
                                         .Include(schedule => schedule.Tickets)
-                                        .SingleOrDefault();
+                                        .SingleOrDefault(schedule => schedule.Id == id);
 
             if(existingSchedule == null) {
                 return _responseObject.ResponseError(StatusCodes.Status400BadRequest, "The schedule is not found. Please check again!", null);
             }
 
-            if(existingSchedule.Tickets != null)
-            {
-                _context.tickets.RemoveRange(existingSchedule.Tickets);
-            }
+            existingSchedule.IsActive = false;
 
-            _context.schedules.Remove(existingSchedule);
+            _context.schedules.Update(existingSchedule);
             _context.SaveChanges();
             return _responseObject.ResponseSuccess("The schedule has been deleted successfully!", null);
         }
