@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ using MovieManagementSystem.Services.Interfaces;
 namespace MovieManagementSystem.Controllers
 {
     [ApiController]
+    [Route("Api/[controller]/[action]")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -19,49 +21,49 @@ namespace MovieManagementSystem.Controllers
             _userService = userService;
         }
 
-        [HttpPost("/api/auth/register")]
+        [HttpPost]
         public IActionResult Register([FromBody] Request_Register request)
         {
             return Ok(_userService.Register(request));
         }
 
 
-        [HttpPost("/api/auth/login")]
+        [HttpPost]
         public IActionResult Login([FromBody] Request_Login request)
         {
             return Ok(_userService.Login(request));
         }
 
-        [HttpGet("/api/auth/get-all")]
-        [Authorize(Roles = "Admin")]
-        public ActionResult GetAll([FromQuery] Pagination pagination)
-        {
-            return Ok(_userService.GetAll(pagination));
-        }
-
-        [HttpPost("/api/auth/confirm-account")]
+        [HttpPost]
         [Authorize]
         public IActionResult ConfirmAccount(string confirmationCode)
         {
             return Ok(_userService.ConfirmAccount(confirmationCode));
         }
 
-        [HttpPost("/api/auth/send-confirmation-code")]
+        [HttpPost]
         [Authorize]
         public IActionResult SendConfirmationCode(string email)
         {
             return Ok(_userService.SendConfirmationCode(email));
         }
 
-        [HttpPost("/api/auth/forgot-password")]
+        [HttpPut]
         [Authorize]
         public IActionResult ResetPassword(string resetCode, string newPassword)
         {
             return Ok(_userService.ResetPassword(resetCode, newPassword));
         }
 
-        [HttpPost("/api/auth/change-password")]
+        [HttpPost]
         [Authorize]
+        public IActionResult RenewAccessToken(Request_RenewAccessToken request)
+        {
+            return Ok(_userService.RenewAccessToken(request));
+        }
+
+        [HttpPut]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public IActionResult ChangePassword([FromBody] Request_ChangePassword request)
         {
             // Lấy ID của người dùng đang đăng nhập từ các thông tin xác thực
@@ -84,5 +86,12 @@ namespace MovieManagementSystem.Controllers
                 return BadRequest(new ResponseObject<bool>(StatusCodes.Status400BadRequest, "Người dùng chưa được xác thực", false));
             }
         }
+
+        [HttpPut("{id}")]
+        [Authorize]
+        public IActionResult UpdateUser(Request_EditUser request, int id)
+        {
+            return Ok(_userService.EditUser(request, id));
+        }      
     }
 }

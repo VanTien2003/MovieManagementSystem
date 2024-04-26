@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MovieManagementSystem.DataContext;
+using MovieManagementSystem.Payloads.Converters;
+using MovieManagementSystem.Payloads.DataResponses;
+using MovieManagementSystem.Payloads.Responses;
+using MovieManagementSystem.Services;
 using MovieManagementSystem.Services.Implements;
 using MovieManagementSystem.Services.Interfaces;
 
@@ -20,15 +24,10 @@ namespace MovieManagementSystem
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             //builder.Services.AddSwaggerGen();
-            builder.Services.AddSwaggerGen(x =>
-            {
-                x.AddSecurityDefinition("Auth", new OpenApiSecurityScheme
-                {
-                    Description = "Làm theo mẫu này. Ví dụ: Bearer {Token}",
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.ApiKey
-                });
-            });
+
+            builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlServer(
+                builder.Configuration.GetConnectionString("MyDB")
+            ));
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(x =>
             {
                 x.RequireHttpsMetadata = false;
@@ -44,7 +43,18 @@ namespace MovieManagementSystem
                     IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration.GetSection("AppSettings:SecretKey").Value!))
                 };
             });
-            builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddSwaggerGen(x =>
+            {
+                x.AddSecurityDefinition("Auth", new OpenApiSecurityScheme
+                {
+                    Description = "Làm theo mẫu này. Ví dụ: Bearer {Token}",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+            });
+
+            // Call methods from new files
+            ServiceRegistrar.RegisterServices(builder.Services);
 
             var app = builder.Build();
 
